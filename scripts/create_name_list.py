@@ -15,6 +15,6 @@ for tables in soup.find_all("table", class_="roundy roundtable"):
             german_name = cells[3].get_text(strip=True)
             name_tuples.append((dex_number, english_name, german_name))
 
-with open("german_names.txt", "w", encoding="utf-8") as file:
+with open("data/german_names.txt", "w", encoding="utf-8") as file:
     for dex_number, english_name, german_name in name_tuples:
         file.write(f"{dex_number},{english_name},{german_name}\n")
