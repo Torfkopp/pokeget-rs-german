@@ -1,3 +1,6 @@
 [submodule "data/pokesprite"]
 	path = data/pokesprite
 	url = https://github.com/msikma/pokesprite.git
+[submodule "data/pokesprite-gen9"]
+	path = data/pokesprite-gen9
+	url = https://github.com/bamq/pokemon-sprites
