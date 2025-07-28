@@ -17,6 +17,7 @@ pub struct List {
 
     /// All the proper, formatted names in order of Pokedex ID.
     names: Vec<String>,
+    german_names: Vec<String>,
 }
 
 impl List {
@@ -28,19 +29,21 @@ impl List {
             .has_headers(false)
             .from_reader(Cursor::new(FILE));
 
-        const CAPACITY: usize = 1000;
+        const CAPACITY: usize = 1200;  // Over 1000 Pokemon already :O
 
         let mut ids = BiHashMap::with_capacity(CAPACITY);
         let mut names = Vec::with_capacity(CAPACITY);
+        let mut german_names = Vec::with_capacity(CAPACITY);
 
         for (i, entry) in reader.deserialize().enumerate() {
-            let record: (String, String) = entry.unwrap();
+            let record: (String, String, String) = entry.unwrap();
 
-            ids.insert(i, record.1);
+            ids.insert(i, record.2);
             names.push(record.0);
+            german_names.push(record.1)
         }
 
-        Self { ids, names }
+        Self { ids, names, german_names }
     }
 
     /// Takes a filename and looks up the proper display name.
@@ -50,7 +53,7 @@ impl List {
     /// ```
     /// use pokeget::list::List;
     /// let list = List::read();
-    /// assert_eq!(list.format_name("mr-mime"), "Mr. Mime")
+    /// assert_eq!(list.format_name("mr-mime"), "Pantimos")
     /// ```
     pub fn format_name(&self, filename: &str) -> String {
         let raw_fmt = |x: &str| x.replace('-', " ").replace('\'', "").to_title_case();
@@ -58,11 +61,21 @@ impl List {
         let Some(id) = self.ids.get_by_right(filename) else {
             return raw_fmt(filename);
         };
-        let Some(name) = self.names.get(*id) else {
+        let Some(name) = self.german_names.get(*id) else {
             return raw_fmt(filename);
         };
 
         name.clone()
+    }
+
+    /// Gets a pokemon by its name (English or German)
+    pub fn get_by_name(&self, name: &str) -> Option<&String> {
+        let mut id = self.german_names.iter().position(|n| n == name);
+        if id == None {
+            id = self.names.iter().position(|n| n == name);
+        }
+
+        return self.get_by_id(id?);
     }
 
     /// Gets a pokemon filename by a Dex ID.
@@ -87,10 +100,11 @@ impl List {
             Region::Johto => 152..=251,
             Region::Hoenn => 252..=386,
             Region::Sinnoh => 387..=493,
-            Region::Unova => 494..=649,
+            Region::Einall => 494..=649,
             Region::Kalos => 650..=721,
             Region::Alola => 722..=809,
             Region::Galar => 810..=905,
+            Region::Paldea => 906..=1025,
         };
 
         let idx = rand.gen_range(region);

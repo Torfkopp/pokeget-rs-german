@@ -12,7 +12,7 @@ fn main() {
     let args = Args::parse();
 
     if args.pokemon.is_empty() {
-        eprintln!("you must specify the pokemon you want to display");
+        eprintln!("Du musst spezifizieren, welches Pokémon dargestellt werden soll");
         exit(1);
     }
 

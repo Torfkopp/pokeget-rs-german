@@ -4,7 +4,7 @@ use image::DynamicImage;
 
 use rand::Rng;
 
-use crate::{cli::Args, list::List, Data};
+use crate::{cli::Args, list::List, Data, DataGen9};
 
 const DEFAULT_SHINY_RATE: u32 = 8192;
 
@@ -15,10 +15,11 @@ pub enum Region {
     Johto,
     Hoenn,
     Sinnoh,
-    Unova,
+    Einall,
     Kalos,
     Alola,
     Galar,
+    Paldea
 }
 
 /// Enum used to assist parsing user input.
@@ -60,10 +61,11 @@ impl Selection {
                 "johto" => Selection::Region(Region::Johto),
                 "hoenn" => Selection::Region(Region::Hoenn),
                 "sinnoh" => Selection::Region(Region::Sinnoh),
-                "unova" => Selection::Region(Region::Unova),
+                "einall" => Selection::Region(Region::Einall),
                 "kalos" => Selection::Region(Region::Kalos),
                 "alola" => Selection::Region(Region::Alola),
                 "galar" => Selection::Region(Region::Galar),
+                "paldea" => Selection::Region(Region::Paldea),
                 _ => Selection::Name(arg),
             }
         }
@@ -78,11 +80,17 @@ impl Selection {
                 .get_by_id(id)
                 .unwrap_or_else(|| {
                     // add 1 to id so that error message matches user input
-                    eprintln!("{} is not a valid pokedex ID", id + 1);
+                    eprintln!("{} ist keine valide Pokédex-Nummer", id + 1);
                     exit(1)
                 })
                 .clone(),
-            Selection::Name(name) => name,
+            Selection::Name(name) => list
+                .get_by_name(&name)
+                .unwrap_or_else(|| {
+                    eprintln!("Pokémon nicht gefunden");
+                    exit(1)
+                })
+                .clone(),
         }
     }
 }
@@ -115,8 +123,9 @@ impl<'a> Pokemon<'a> {
 
         let path = attributes.path(&name, is_random, is_region);
         let bytes = Data::get(&path)
+            .or_else(|| DataGen9::get(&path))
             .unwrap_or_else(|| {
-                eprintln!("pokemon not found");
+                eprintln!("Pokémon nicht gefunden");
                 exit(1)
             })
             .data
@@ -197,12 +206,6 @@ impl Attributes {
         if !self.form.is_empty() && !is_random {
             filename.push_str(&format!("-{}", self.form));
         }
-
-        // I hate Mr. Mime and Farfetch'd.
-        filename = filename
-            .replace([' ', '_'], "-")
-            .replace(['.', '\'', ':'], "")
-            .to_lowercase();
 
         let path = format!(
             "{}/{}{}.png",
