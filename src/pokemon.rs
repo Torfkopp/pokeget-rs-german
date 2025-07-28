@@ -19,7 +19,7 @@ pub enum Region {
     Kalos,
     Alola,
     Galar,
-    Paldea
+    Paldea,
 }
 
 /// Enum used to assist parsing user input.
@@ -86,6 +86,7 @@ impl Selection {
                 .clone(),
             Selection::Name(name) => list
                 .get_by_name(&name)
+                .or_else(|| list.get_by_name_fuzzy(&name))
                 .unwrap_or_else(|| {
                     eprintln!("Pokémon nicht gefunden");
                     exit(1)

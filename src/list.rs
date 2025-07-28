@@ -29,7 +29,7 @@ impl List {
             .has_headers(false)
             .from_reader(Cursor::new(FILE));
 
-        const CAPACITY: usize = 1200;  // Over 1000 Pokemon already :O
+        const CAPACITY: usize = 1200; // Over 1000 Pokemon already :O
 
         let mut ids = BiHashMap::with_capacity(CAPACITY);
         let mut names = Vec::with_capacity(CAPACITY);
@@ -43,7 +43,11 @@ impl List {
             german_names.push(record.1)
         }
 
-        Self { ids, names, german_names }
+        Self {
+            ids,
+            names,
+            german_names,
+        }
     }
 
     /// Takes a filename and looks up the proper display name.
@@ -68,14 +72,41 @@ impl List {
         name.clone()
     }
 
-    /// Gets a pokemon by its name (English or German)
+    /// Gets a pokemon filename by its name (English or German)
     pub fn get_by_name(&self, name: &str) -> Option<&String> {
-        let mut id = self.german_names.iter().position(|n| n == name);
+        let mut id = self
+            .german_names
+            .iter()
+            .position(|n| n.to_lowercase() == name.to_lowercase());
         if id == None {
-            id = self.names.iter().position(|n| n == name);
+            id = self
+                .names
+                .iter()
+                .position(|n| n.to_lowercase() == name.to_lowercase());
         }
 
         return self.get_by_id(id?);
+    }
+
+    /// Gets a filename with fuzzy search
+    pub fn get_by_name_fuzzy(&self, name: &str) -> Option<&String> {
+        use rust_fuzzy_search::fuzzy_search_best_n;
+
+        // Combine the vectors and convert to Vec<&str>
+        let combined: Vec<&str> = self
+            .german_names
+            .iter()
+            .chain(self.names.iter())
+            .map(|s| s.as_str())
+            .collect();
+
+        // Perform fuzzy search
+        let res: Vec<(&str, f32)> = fuzzy_search_best_n(name, &combined, 1);
+
+        // Return the best match (res[0].0 is the matched string)
+        let fuzzy_name = res.first().map(|(s, _)| s.to_string()).unwrap_or_default();
+
+        return self.get_by_name(&fuzzy_name);
     }
 
     /// Gets a pokemon filename by a Dex ID.
